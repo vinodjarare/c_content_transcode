@@ -18,8 +18,18 @@ interface StreamVariant {
 const videoStreams: StreamVariant[] = [
   { resolution: "360p", size: "640x360", bitrate: "800k", bandwidth: 800000 },
   { resolution: "480p", size: "842x480", bitrate: "1400k", bandwidth: 1400000 },
-  { resolution: "720p", size: "1280x720", bitrate: "2800k", bandwidth: 2800000 },
-  { resolution: "1080p", size: "1920x1080", bitrate: "5000k", bandwidth: 5000000 },
+  {
+    resolution: "720p",
+    size: "1280x720",
+    bitrate: "2800k",
+    bandwidth: 2800000,
+  },
+  {
+    resolution: "1080p",
+    size: "1920x1080",
+    bitrate: "5000k",
+    bandwidth: 5000000,
+  },
 ];
 
 /**
@@ -28,7 +38,10 @@ const videoStreams: StreamVariant[] = [
  * @param outputDir Directory to save transcoded files
  * @returns Promise that resolves when transcoding is complete
  */
-export const transcodeAudio = (inputPath: string, outputDir: string): Promise<void> => {
+export const transcodeAudio = (
+  inputPath: string,
+  outputDir: string
+): Promise<void> => {
   return new Promise((resolve, reject) => {
     // Ensure output directory exists
     if (!fs.existsSync(outputDir)) {
@@ -74,7 +87,10 @@ export const transcodeAudio = (inputPath: string, outputDir: string): Promise<vo
  * @param outputDir Directory to save transcoded files
  * @returns Promise that resolves when transcoding is complete
  */
-export const transcodeVideo = (inputPath: string, outputDir: string): Promise<void> => {
+export const transcodeVideo = (
+  inputPath: string,
+  outputDir: string
+): Promise<void> => {
   return new Promise((resolve, reject) => {
     // Ensure output directory exists
     fs.mkdirSync(outputDir, { recursive: true });
@@ -103,20 +119,31 @@ export const transcodeVideo = (inputPath: string, outputDir: string): Promise<vo
           `-b:v ${stream.bitrate}`,
           `-maxrate ${stream.bitrate}`,
           "-bufsize 2M",
-          `-hls_segment_filename ${path.join(resolutionDir, "segment_%03d.ts")}`,
+          `-hls_segment_filename ${path.join(
+            resolutionDir,
+            "segment_%03d.ts"
+          )}`,
         ])
         .format("hls")
         .output(output)
         .on("start", () => {
-          console.log(`🚀 Starting ${stream.resolution} conversion for ${inputPath}`);
+          console.log(
+            `🚀 Starting ${stream.resolution} conversion for ${inputPath}`
+          );
         })
         .on("progress", (progress) => {
           if (progress.percent) {
-            console.log(`🔄 ${stream.resolution} progress: ${progress.percent.toFixed(2)}%`);
+            console.log(
+              `🔄 ${stream.resolution} progress: ${progress.percent.toFixed(
+                2
+              )}%`
+            );
           }
         })
         .on("end", () => {
-          console.log(`✅ ${stream.resolution} conversion finished for ${inputPath}`);
+          console.log(
+            `✅ ${stream.resolution} conversion finished for ${inputPath}`
+          );
           completedStreams++;
 
           // Check if all streams are complete
@@ -145,7 +172,10 @@ export const transcodeVideo = (inputPath: string, outputDir: string): Promise<vo
           }
         })
         .on("error", (err: Error) => {
-          console.error(`❌ ${stream.resolution} error for ${inputPath}:`, err.message);
+          console.error(
+            `❌ ${stream.resolution} error for ${inputPath}:`,
+            err.message
+          );
           hasError = true;
           reject(err);
         })
@@ -162,26 +192,35 @@ export const transcodeVideo = (inputPath: string, outputDir: string): Promise<vo
  * @returns Promise that resolves when transcoding is complete
  */
 export const transcodeMedia = async (
-  inputPath: string, 
-  outputPath: string, 
+  inputPath: string,
+  outputPath: string,
   format: string
 ): Promise<void> => {
   // Ensure input file exists
+
+  console.log("process::", process.cwd());
+
+  inputPath = path.join(process.cwd(), inputPath);
+  outputPath = path.join(process.cwd(), outputPath);
+
+  console.log(
+    `Transcoding media from ${inputPath} to ${outputPath}...`
+  );
+ 
   if (!fs.existsSync(inputPath)) {
     throw new Error(`Input file not found: ${inputPath}`);
   }
 
   // Create output directory if it doesn't exist
-  const outputDir = path.dirname(outputPath);
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
+  if (!fs.existsSync(outputPath)) {
+    fs.mkdirSync(outputPath, { recursive: true });
   }
 
   // Process based on format
   if (format.toLowerCase() === "audio") {
-    return transcodeAudio(inputPath, outputDir);
+    return transcodeAudio(inputPath, outputPath);
   } else if (format.toLowerCase() === "video") {
-    return transcodeVideo(inputPath, outputDir);
+    return transcodeVideo(inputPath, outputPath);
   } else {
     throw new Error(`Unsupported format: ${format}`);
   }
